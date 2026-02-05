@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Animals Vocabulary Test</title>
+
+<style>
+body {
+    margin: 0;
+    height: 100vh;
+    background: linear-gradient(135deg, #84fab0, #8fd3f4);
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.app {
+    background: white;
+    width: 400px;
+    padding: 30px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+}
+
+h1 { color: #2c7be5; }
+
+.word {
+    font-size: 44px;
+    font-weight: bold;
+    margin: 20px 0;
+}
+
+.options button {
+    width: 100%;
+    padding: 12px;
+    margin: 6px 0;
+    font-size: 18px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    background: #f1f3ff;
+}
+
+.correct { background: #4CAF50 !important; color: white; }
+.wrong { background: #F44336 !important; color: white; }
+
+.score {
+    margin-top: 15px;
+    font-size: 18px;
+}
+
+.hidden { display: none; }
+
+.mode button,
+#result button,
+.control button {
+    width: 100%;
+    padding: 14px;
+    margin: 8px 0;
+    font-size: 18px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    background: #2c7be5;
+    color: white;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<!-- МЕНЮ -->
+<div id="mode">
+    <h1>Выбери режим</h1>
+    <div class="mode">
+        <button onclick="startTest('en-ru')">Английский → Русский</button>
+        <button onclick="startTest('ru-en')">Русский → Английский</button>
+    </div>
+</div>
+
+<!-- ТЕСТ -->
+<div id="test" class="hidden">
+    <h1>🐾 Animals</h1>
+    <div class="word" id="word"></div>
+    <div id="options" class="options"></div>
+    <div id="answer"></div>
+
+    <div class="score">
+        ✔️ <span id="good">0</span> |
+        ❌ <span id="bad">0</span>
+    </div>
+
+    <div class="control">
+        <button onclick="finishTest()">⛔ Закончить</button>
+        <button onclick="goMenu()">⬅ Главное меню</button>
+    </div>
+</div>
+
+<!-- РЕЗУЛЬТАТ -->
+<div id="result" class="hidden">
+    <h1>🎉 Результат</h1>
+    <div style="font-size:32px; margin:20px 0;">
+        ✔️ <span id="finalGood"></span><br>
+        ❌ <span id="finalBad"></span>
+    </div>
+    <button onclick="restart()">🔁 Повторить</button>
+    <button onclick="goMenu()">🏠 Главное меню</button>
+</div>
+
+</div>
+
+<!-- ЗВУК ТОЛЬКО ДЛЯ ОШИБКИ -->
+<audio id="soundBad">
+ <source src="https://actions.google.com/sounds/v1/cartoon/buzzer.ogg">
+</audio>
+
+<script>
+const animals = [
+ {en:"Dog", ru:"Собака"},
+ {en:"Cat", ru:"Кошка"},
+ {en:"Rabbit", ru:"Кролик"},
+ {en:"Horse", ru:"Лошадь"},
+ {en:"Donkey", ru:"Осёл"},
+ {en:"Lion", ru:"Лев"},
+
+ {en:"Wolf", ru:"Волк"},
+ {en:"Fox", ru:"Лиса"},
+ {en:"Kangaroo", ru:"Кенгуру"},
+ {en:"Zebra", ru:"Зебра"},
+ {en:"Elephant", ru:"Слон"},
+ {en:"Deer", ru:"Олень"},
+
+ {en:"Tiger", ru:"Тигр"},
+ {en:"Mouse", ru:"Мышь"},
+ {en:"Camel", ru:"Верблюд"},
+ {en:"Bear", ru:"Медведь"},
+ {en:"Giraffe", ru:"Жираф"},
+ {en:"Monkey", ru:"Обезьяна"},
+
+ {en:"Gorilla", ru:"Горилла"},
+ {en:"Panda", ru:"Панда"},
+ {en:"Koala", ru:"Коала"},
+ {en:"Squirrel", ru:"Белка"},
+ {en:"Rhino", ru:"Носорог"},
+ {en:"Penguin", ru:"Пингвин"},
+
+ {en:"Cow", ru:"Корова"},
+ {en:"Sheep", ru:"Овца"},
+ {en:"Pig", ru:"Свинья"},
+ {en:"Chicken", ru:"Курица"},
+ {en:"Rooster", ru:"Петух"},
+ {en:"Duck", ru:"Утка"},
+
+ {en:"Goat", ru:"Коза"},
+ {en:"Turtle", ru:"Черепаха"},
+ {en:"Snake", ru:"Змея"},
+ {en:"Crocodile", ru:"Крокодил"},
+ {en:"Frog", ru:"Лягушка"},
+ {en:"Crab", ru:"Краб"},
+
+ {en:"Dolphin", ru:"Дельфин"},
+ {en:"Shark", ru:"Акула"},
+ {en:"Whale", ru:"Кит"},
+ {en:"Fish", ru:"Рыба"},
+ {en:"Ant", ru:"Муравей"},
+ {en:"Spider", ru:"Паук"},
+
+ {en:"Bat", ru:"Летучая мышь"},
+ {en:"Butterfly", ru:"Бабочка"},
+ {en:"Parrot", ru:"Попугай"},
+ {en:"Bee", ru:"Пчела"},
+ {en:"Bird", ru:"Птица"},
+ {en:"Owl", ru:"Сова"}
+];
+
+let mode = "";
+let good = 0;
+let bad = 0;
+
+let pool = [];
+
+function shuffle(arr){
+ return arr.sort(() => Math.random() - 0.5);
+}
+
+function startTest(selectedMode){
+
+ mode = selectedMode;
+ good = 0;
+ bad = 0;
+
+ pool = shuffle([...animals]);
+
+ document.getElementById("good").textContent = 0;
+ document.getElementById("bad").textContent = 0;
+
+ document.getElementById("mode").classList.add("hidden");
+ document.getElementById("result").classList.add("hidden");
+ document.getElementById("test").classList.remove("hidden");
+
+ nextQuestion();
+}
+
+function nextQuestion(){
+
+ if(pool.length === 0){
+   finishTest();
+   return;
+ }
+
+ document.getElementById("options").innerHTML = "";
+ document.getElementById("answer").textContent = "";
+
+ const current = pool.pop();
+
+ let questionText = mode === "en-ru" ? current.en : current.ru;
+ let correctAnswer = mode === "en-ru" ? current.ru : current.en;
+
+ document.getElementById("word").textContent = questionText;
+
+ let answers = [correctAnswer];
+
+ while(answers.length < 6){
+   let r = animals[Math.floor(Math.random() * animals.length)];
+   let text = mode === "en-ru" ? r.ru : r.en;
+   if(!answers.includes(text)) answers.push(text);
+ }
+
+ shuffle(answers);
+
+ answers.forEach(a => {
+   const btn = document.createElement("button");
+   btn.textContent = a;
+   btn.onclick = () => checkAnswer(btn, a, correctAnswer);
+   document.getElementById("options").appendChild(btn);
+ });
+}
+
+function checkAnswer(button, value, correct){
+
+ const buttons = document.querySelectorAll(".options button");
+ buttons.forEach(b => b.disabled = true);
+
+ if(value === correct){
+   good++;
+   button.classList.add("correct");
+   document.getElementById("good").textContent = good;
+ } else {
+   bad++;
+   button.classList.add("wrong");
+   document.getElementById("soundBad").play();
+   document.getElementById("bad").textContent = bad;
+   document.getElementById("answer").textContent =
+     "Правильный ответ: " + correct;
+ }
+
+ setTimeout(nextQuestion, 1200);
+}
+
+function finishTest(){
+
+ document.getElementById("test").classList.add("hidden");
+ document.getElementById("result").classList.remove("hidden");
+
+ document.getElementById("finalGood").textContent = good;
+ document.getElementById("finalBad").textContent = bad;
+}
+
+function restart(){
+ startTest(mode);
+}
+
+function goMenu(){
+ document.getElementById("test").classList.add("hidden");
+ document.getElementById("result").classList.add("hidden");
+ document.getElementById("mode").classList.remove("hidden");
+}
+</script>
+
+</body>
+</html>
